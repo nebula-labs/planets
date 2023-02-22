@@ -1,0 +1,43 @@
+global:
+  api-listen-addr: :5183
+  timeout: 10s
+  memo: ""
+  light-cache-size: 20
+chains:
+  aura:
+    type: cosmos
+    value:
+      key: rly-aura
+      chain-id: test-aura
+      rpc-addr: http://aura:26657
+      account-prefix: aura
+      keyring-backend: test
+      gas-adjustment: 1.2
+      gas-prices: 0.01uaura
+      debug: false
+      timeout: 20s
+      output-format: json
+      sign-mode: direct
+  orai:
+    type: cosmos
+    value:
+      key: rly-orai
+      chain-id: test-orai
+      rpc-addr: http://orai:26657
+      account-prefix: orai
+      keyring-backend: test
+      gas-adjustment: 1.2
+      gas-prices: 0.01uorai
+      debug: false
+      timeout: 20s
+      output-format: json
+      sign-mode: direct
+paths:
+  aura-orai:
+    src:
+      chain-id: test-aura
+    dst:
+      chain-id: test-orai
+    src-channel-filter:
+      rule: ""
+      channel-list: []

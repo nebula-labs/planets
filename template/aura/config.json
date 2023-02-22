@@ -1,0 +1,10 @@
+{
+  "chain-binary": "aurad",
+  "chain-id": "test-aura",
+  "denom": "ueaura",
+  "prefix": "aura",
+  "addresses": [
+    "aura1xrj7hrjg86fdd9ct7j4dluusgd6geghhewassh",
+    "aura15hh4c5dzwdy6alx6uzc5c2hzd3eu2dn282rf2y"
+  ]
+}

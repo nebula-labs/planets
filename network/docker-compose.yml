@@ -1,0 +1,27 @@
+version: '3'
+services:
+  aura:
+    container_name: aura
+    image: intertravel:aura
+    volumes:
+      - ./config/aura:/home/aura/.aura
+    ports:
+      - "26657:26657"
+      - "1317:1317"
+      - "9090:9090"
+  orai:
+    container_name: orai
+    image: intertravel:orai
+    volumes:
+      - ./config/orai:/home/orai/.oraid
+    ports:
+      - "26357:26657"
+      - "1117:1317"
+      - "9060:9090"
+  relayer:
+    container_name: relayer
+    image: intertravel:relayer
+    volumes:
+      - ./config/relayer-config:/home/relayer/.relayer
+    restart: always
+    command: [ "bash", "start.sh", "aura-orai" ]

@@ -1,0 +1,10 @@
+{
+  "chain-binary": "oraid",
+  "chain-id": "test-orai",
+  "denom": "uorai",
+  "prefix": "orai",
+  "addresses": [
+    "orai1xrj7hrjg86fdd9ct7j4dluusgd6geghh3tu3na",
+    "orai15hh4c5dzwdy6alx6uzc5c2hzd3eu2dn200zgfw"
+  ]
+}

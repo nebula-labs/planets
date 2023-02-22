@@ -1,0 +1,10 @@
+{
+  "chain-binary": "junod",
+  "chain-id": "test-juno",
+  "denom": "ujuno",
+  "prefix": "juno",
+  "addresses": [
+    "juno1xrj7hrjg86fdd9ct7j4dluusgd6geghh52ff4j",
+    "juno15hh4c5dzwdy6alx6uzc5c2hzd3eu2dn22whs0p"
+  ]
+}
