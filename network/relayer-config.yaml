@@ -13,7 +13,7 @@ chains:
       account-prefix: aura
       keyring-backend: test
       gas-adjustment: 1.2
-      gas-prices: 0.01uaura
+      gas-prices: 0.01ueaura
       debug: false
       timeout: 20s
       output-format: json
@@ -32,12 +32,34 @@ chains:
       timeout: 20s
       output-format: json
       sign-mode: direct
+  juno:
+    type: cosmos
+    value:
+      key: rly-juno
+      chain-id: test-juno
+      rpc-addr: http://juno:26657
+      account-prefix: juno
+      keyring-backend: test
+      gas-adjustment: 1.2
+      gas-prices: 0.01ujuno
+      debug: false
+      timeout: 20s
+      output-format: json
+      sign-mode: direct
 paths:
   aura-orai:
     src:
       chain-id: test-aura
     dst:
       chain-id: test-orai
+    src-channel-filter:
+      rule: ""
+      channel-list: []
+  aura-juno:
+    src:
+      chain-id: test-aura
+    dst:
+      chain-id: test-juno
     src-channel-filter:
       rule: ""
       channel-list: []

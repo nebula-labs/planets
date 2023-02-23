@@ -1,11 +1,9 @@
 #!/bin/bash
 
-source vars.sh
-
 BINARY=$1
 DENOM=$2
 DIR=$3
-CHAIN_ID="test-${DENOM:1}"
+CHAIN_ID=$4
 KEYRING="test"
 KEY="test"
 KEY1="test1"

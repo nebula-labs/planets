@@ -15,13 +15,22 @@ services:
     volumes:
       - ./config/orai:/home/orai/.oraid
     ports:
-      - "26357:26657"
-      - "1117:1317"
-      - "9060:9090"
-  relayer:
+      - "26656:26657"
+      - "1316:1317"
+      - "9089:9090"
+  juno:
+    container_name: juno
+    image: intertravel:juno
+    volumes:
+      - ./config/juno:/home/juno/.juno
+    ports:
+      - "26655:26657"
+      - "1315:1317"
+      - "9088:9090"
+  relayer-aura-juno:
     container_name: relayer
     image: intertravel:relayer
     volumes:
       - ./config/relayer-config:/home/relayer/.relayer
     restart: always
-    command: [ "bash", "start.sh", "aura-orai" ]
+    command: [ "bash", "start.sh", "aura-juno" ]
