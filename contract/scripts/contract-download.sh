@@ -34,4 +34,3 @@ wget -O contract/wasm/"network_$network_num/${contract}.wasm" "$url"
 
 echo "Downloading $json_url ..."
 wget -O contract/schema/"network_$network_num/${contract}.json" "$json_url"
-wget -qO- "$json_url" | jq -r '.instantiate' > contract/init_msg/"network_$network_num/${contract}_init.json"

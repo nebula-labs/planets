@@ -21,6 +21,7 @@ CONTRACT_NAME=()
 CONTRACT_CHAIN=()
 CONTRACT_ADDRESS=()
 
+# todo: according to new design, this should loop through all init_msg instead of contracts
 # loop through each network
 for i in {1..2}; do
     wasm_list=($(find $ROOT/contract/wasm/network_$i -name "*.wasm"))
@@ -28,21 +29,17 @@ for i in {1..2}; do
     for wasm_dir in ${wasm_list[@]}; do
         CONTRACT_NAME+=($(basename $wasm_dir .wasm))
         CONTRACT_CHAIN+=($(($i - 1)))
-        CONTRACT_ADDRESS+=('')
     done
 done
 
 echo ${CONTRACT_DIR[@]}
 echo ${CONTRACT_NAME[@]}
 echo ${CONTRACT_CHAIN[@]}
-echo ${CONTRACT_ADDRESS[@]}
 
 # check if a folder exists
 if [ ! -d $ROOT/contract/logs ]; then
     mkdir $ROOT/contract/logs
 fi
-
-# construct init msg
 
 # loop contracts
 for j in $(seq 0 $((${#CONTRACT_DIR[@]} - 1))); do
