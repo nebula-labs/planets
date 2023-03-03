@@ -20,41 +20,43 @@ CONTRACT_DIR=()
 CONTRACT_NAME=()
 CONTRACT_CHAIN=()
 CONTRACT_ADDRESS=()
+INIT_MSG=()
 
 # todo: according to new design, this should loop through all init_msg instead of contracts
 # loop through each network
 for i in {1..2}; do
-    wasm_list=($(find $ROOT/contract/wasm/network_$i -name "*.wasm"))
-    CONTRACT_DIR+=($wasm_list)
-    for wasm_dir in ${wasm_list[@]}; do
-        CONTRACT_NAME+=($(basename $wasm_dir .wasm))
+    init_list=($(find $ROOT/contract/init_msg/network_$i -name "*.json"))
+
+    # get smart contract name
+    for init_item in ${init_list[@]}; do
+        wasm_name=$(cat $init_item | jq -r .wasm)
+        CONTRACT_DIR+=($ROOT/contract/wasm/network_$i/$wasm_name.wasm)
+        CONTRACT_NAME+=($wasm_name)
         CONTRACT_CHAIN+=($(($i - 1)))
+        INIT_MSG+=("$(cat $init_item | jq -r .init)")
     done
 done
 
 echo ${CONTRACT_DIR[@]}
 echo ${CONTRACT_NAME[@]}
 echo ${CONTRACT_CHAIN[@]}
+echo ${INIT_MSG[@]}
 
 # check if a folder exists
 if [ ! -d $ROOT/contract/logs ]; then
     mkdir $ROOT/contract/logs
 fi
 
-# loop contracts
-for j in $(seq 0 $((${#CONTRACT_DIR[@]} - 1))); do
+# loop through each init_msg
+for j in $(seq 0 $((${#INIT_MSG[@]} - 1))); do
     i=${CONTRACT_CHAIN[$j]}
-    echo "DEPLOYING ${CONTRACT_DIR[$j]}"
-
-    if [ "${INIT_MSG[$j]}" = "" ]; then
-        continue
-    fi
+    echo "DEPLOYING ${CONTRACT_NAME[$j]}"
 
     # store contract
-    RES=$(${BINARY[$i]} tx wasm store "${CONTRACT_DIR[$j]}" --from "$ACCOUNT" -y --output json --chain-id "${CHAINID[$i]}" --node "${NODE[$i]}" --gas 20000000 --fees 875000${DENOM[$i]} -y --output json --keyring-backend $KEYRING --home ${DIR[$i]})
+    RES=$(${BINARY[$i]} tx wasm store "${CONTRACT_DIR[$j]}" --from "$ACCOUNT" -y --output json --chain-id "${CHAINID[$i]}" --node "${NODE[$i]}" --gas 20000000 --fees 875000${DENOMS[$i]} -y --output json --keyring-backend $KEYRING --home ${CONFIG_DIR[$i]})
     echo $RES
 
-    if [ "$(echo $RES | jq -r .raw_log)" != "[]" ]; then
+    if [ "$(echo $RES | jq -r .code)" != "0" ]; then
         # exit
         echo "ERROR = $(echo $RES | jq .raw_log)"
         exit 1
@@ -79,9 +81,9 @@ for j in $(seq 0 $((${#CONTRACT_DIR[@]} - 1))); do
     echo "CODE_ID on ${CHAINID[$i]} = $CODE_ID"
 
     # instantiate contract
-    RES=$(${BINARY[$i]} tx wasm instantiate "$CODE_ID" "${INIT_MSG[$j]}" --from "$ACCOUNT" --no-admin --label "contract" -y --chain-id "${CHAINID[$i]}" --node "${NODE[$i]}" --gas 20000000 --fees 100000${DENOM[$i]} -o json --keyring-backend $KEYRING --home ${DIR[$i]})
-
-    if [ "$(echo $RES | jq -r .raw_log)" != "[]" ]; then
+    RES=$(${BINARY[$i]} tx wasm instantiate "$CODE_ID" "${INIT_MSG[$j]}" --from "$ACCOUNT" --no-admin --label "contract" -y --chain-id "${CHAINID[$i]}" --node "${NODE[$i]}" --gas 20000000 --fees 100000${DENOMS[$i]} -o json --keyring-backend $KEYRING --home ${CONFIG_DIR[$i]})
+    echo $RES
+    if [ "$(echo $RES | jq -r .code)" != "0" ]; then
         # exit
         echo "ERROR = $(echo $RES | jq .raw_log)"
         exit 1
@@ -96,15 +98,12 @@ for j in $(seq 0 $((${#CONTRACT_DIR[@]} - 1))); do
     RAW_LOG=$(${BINARY[$i]} query tx "$(echo $RES | jq -r .txhash)" --chain-id "${CHAINID[$i]}" --node "${NODE[$i]}" -o json | jq -r .raw_log)
     echo $RAW_LOG
     ADDRESS=$(echo $RAW_LOG | jq -r .[0].events[0].attributes[0].value)
-    CONTRACT_ADDRESS[$j]=$ADDRESS
-    echo "CONTRACT ADDRESS of ${CONTRACT_NAME[$j]} on ${CHAINID[$i]} with address = $ADDRESS" >> scripts/contract-interaction/logs/contract-addresses.txt
+    CONTRACT_ADDRESS+=($ADDRESS)
 
-    echo "DONE DEPLOYING ${CONTRACT_DIR[$j]}"
+    echo "CONTRACT ADDRESS of ${CONTRACT_NAME[$j]} on ${CHAINID[$i]} with address = $ADDRESS" >> $ROOT/contract/logs/contract-addresses.txt
+
+    echo "DONE DEPLOYING ${CONTRACT_NAME[$j]}"
     echo
     echo
     echo
 done
-
-# write contract addresses to logs
-sed -i "" "s|export SWAPROUTER_CONTRACT=.*|export SWAPROUTER_CONTRACT=${CONTRACT_ADDRESS[1]}|g" scripts/vars.sh
-sed -i "" "s|export CROSSCHAIN_CONTRACT=.*|export CROSSCHAIN_CONTRACT=${CONTRACT_ADDRESS[2]}|g" scripts/vars.sh

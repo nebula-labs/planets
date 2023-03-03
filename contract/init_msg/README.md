@@ -4,7 +4,7 @@ every init msg json file should look like this
 
 ```json
 {
-    "wasm":"cw20_ics20.wasm",
+    "wasm":"cw20_ics20",
     "init": {
         "allowlist": [
             {

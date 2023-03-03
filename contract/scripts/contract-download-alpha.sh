@@ -1,5 +1,6 @@
 #!/bin/bash
 # contract download script. This script can help downloading a variety of contracts from CosmWasm
+# this alpha version only downloads from CosmWasm/cw-plus
 
 contract=$1
 tag=$2
