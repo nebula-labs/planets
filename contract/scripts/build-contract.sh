@@ -36,3 +36,12 @@ docker run --rm -v "$(pwd)":/code \
   --mount type=volume,source="$(basename "$(pwd)")_cache",target=/code/target \
   --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
   $rust_optimizer_image
+
+# if on arm64, remove the image
+if [ $arch == "arm64" ]; then
+  wasm_file=($(find artifacts -name "*.wasm"))
+  for file in $wasm_file; do
+      file_name=$(basename $file .wasm | sed 's/-aarch64//g')
+      mv $file artifacts/$file_name.wasm
+  done
+fi
