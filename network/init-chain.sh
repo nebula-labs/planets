@@ -12,11 +12,17 @@ RELAYER_KEY="rly"
 rm -rf $DIR
 mkdir -p $DIR
 
-# check if toml-cli is installed
-if ! [ -x "$(command -v toml)" ]; then
-  echo 'Error: toml-cli is not installed.' >&2
-  echo 'Please install it by running: pip install toml-cli' >&2
-  exit 1
+SED_BINARY=sed
+# check if this is OS X
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # check if gsed is installed
+    if ! command -v gsed &> /dev/null
+    then
+        echo "gsed could not be found. Please install it with 'brew install gnu-sed'"
+        exit
+    else
+        SED_BINARY=gsed
+    fi
 fi
 
 # Function updates the config based on a jq argument as a string
@@ -52,11 +58,10 @@ if [[ $DENOM == ${DENOMS[1]} ]]; then
   update_test_genesis '.app_state["interchainaccounts"]["host_genesis_state"]["params"]["allow_messages"]=["/ibc.applications.transfer.v1.MsgTransfer"]'
 fi
 
-toml set --toml-path $DIR/config/config.toml p2p.seeds ""
-toml set --toml-path $DIR/config/config.toml rpc.laddr "tcp://0.0.0.0:26657"
-toml set --toml-path $DIR/config/client.toml node "tcp://0.0.0.0:26657"
-toml set --toml-path $DIR/config/app.toml api.swagger true
-toml set --toml-path $DIR/config/app.toml api.enable true
+$SED_BINARY -i '0,/enable = false/s//enable = true/' $HOME/config/app.toml
+$SED_BINARY -i 's/swagger = false/swagger = true/' $HOME/config/app.toml
+$SED_BINARY -i 's/laddr = "tcp:\/\/127\.0\.0\.1:26657"/laddr = "tcp:\/\/0\.0\.0\.0:26657"/' $DIR/config/config.toml
+$SED_BINARY -i 's/node = "tcp:\/\/localhost:26657"/node = "tcp:\/\/0.0.0.0:26657"/' $DIR/config/client.toml
 
 # Sign genesis transaction
 $BINARY gentx $KEY "1000000${DENOM}" --keyring-backend $KEYRING --chain-id $CHAIN_ID --home $DIR
