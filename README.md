@@ -12,3 +12,4 @@ It will setup ibc bridge between two chains
 1. install jq
 2. install docker
 3. install docker compose
+2. install go 'wget -q -O - https://git.io/vQhTU | bash -s -- --version 1.20.1'
