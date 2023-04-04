@@ -9,7 +9,15 @@ if [ -z "$FIRST_NETWORK" ] || [ -z "$SECOND_NETWORK" ]; then
     exit 1
 fi
 
-export ROOT=$(pwd)
+# ROOT must always point to this folder planets
+export ROOT=$(find $(pwd) -type d -name "planets")
+
+# check if docker image exists for interchain:env
+if [ -z "$(docker image inspect interchain:env)" ]; then
+    make build-env
+fi
+
+export DOCKER_EXEC="docker run --rm --user $(id -u):$(id -g) -v $ROOT:/opt/planets interchain/env"
 
 export FIRST_NETWORK
 export SECOND_NETWORK

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ROOT=$(pwd)
+ROOT=$(find $(pwd) -type d -name "planets")
 mkdir build
 
 install_binary() {
