@@ -17,25 +17,21 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // NodeSpec defines the desired state of Node
 type NodeSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of Node. Edit node_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Container  ContainerSpec   `json:"container"`
+	ChainId    string          `json:"chainId"`
+	DataVolume corev1.Volume   `json:"dataVolume,omitempty"`
+	Env        []corev1.EnvVar `json:"env,omitempty"`
 }
 
 // NodeStatus defines the observed state of Node
 type NodeStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Nodes []string `json:"nodes"`
 }
 
 //+kubebuilder:object:root=true
