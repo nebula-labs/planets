@@ -1,0 +1,37 @@
+domain: nebula-labs.org
+layout:
+- go.kubebuilder.io/v4-alpha
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
+projectName: planets
+repo: github.com/nebula-labs/planets
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: nebula-labs.org
+  group: cosmos
+  kind: Node
+  path: github.com/nebula-labs/planets/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: nebula-labs.org
+  group: cosmos
+  kind: Net
+  path: github.com/nebula-labs/planets/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: nebula-labs.org
+  group: cosmos
+  kind: Relayer
+  path: github.com/nebula-labs/planets/api/v1alpha1
+  version: v1alpha1
+version: "3"

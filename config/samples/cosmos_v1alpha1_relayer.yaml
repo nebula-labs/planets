@@ -1,0 +1,12 @@
+apiVersion: cosmos.nebula-labs.org/v1alpha1
+kind: Relayer
+metadata:
+  labels:
+    app.kubernetes.io/name: relayer
+    app.kubernetes.io/instance: relayer-sample
+    app.kubernetes.io/part-of: planets
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: planets
+  name: relayer-sample
+spec:
+  # TODO(user): Add fields here

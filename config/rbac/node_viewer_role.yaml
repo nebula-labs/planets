@@ -1,0 +1,27 @@
+# permissions for end users to view nodes.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: node-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: planets
+    app.kubernetes.io/part-of: planets
+    app.kubernetes.io/managed-by: kustomize
+  name: node-viewer-role
+rules:
+- apiGroups:
+  - cosmos.nebula-labs.org
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cosmos.nebula-labs.org
+  resources:
+  - nodes/status
+  verbs:
+  - get

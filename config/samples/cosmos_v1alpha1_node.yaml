@@ -1,0 +1,12 @@
+apiVersion: cosmos.nebula-labs.org/v1alpha1
+kind: Node
+metadata:
+  labels:
+    app.kubernetes.io/name: node
+    app.kubernetes.io/instance: node-sample
+    app.kubernetes.io/part-of: planets
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: planets
+  name: node-sample
+spec:
+  # TODO(user): Add fields here
