@@ -1,0 +1,20 @@
+apiVersion: cosmos.nebula-labs.org/v1alpha1
+kind: Node
+metadata:
+  labels:
+    app.kubernetes.io/name: juno
+    app.kubernetes.io/instance: juno
+    app.kubernetes.io/part-of: planets
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: planets
+spec:
+  container:
+    name: juno
+    image: ghcr.io/strangelove-ventures/heighliner/juno:v14.0.0
+    imagePullPolicy: IfNotPresent
+    command:
+      - sh
+    args:
+      - 
+  chainId: juno-1
+

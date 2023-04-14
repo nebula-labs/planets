@@ -8,36 +8,49 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
-	DefaultPorts = []corev1.ContainerPort{
-		{
-			Name:          "lcd",
-			ContainerPort: 1317,
-		},
-		{
-			Name:          "p2p",
-			ContainerPort: 26656,
-		},
-		{
-			Name:          "rpc",
-			ContainerPort: 26657,
-		},
-		{
-			Name:          "prometheus",
-			ContainerPort: 26660,
-		},
+	Ports = map[string]int32{
+		"api":        1317,
+		"p2p":        26656,
+		"rpc":        26657,
+		"prometheus": 26660,
 	}
+
+	DefaultNodePorts []corev1.ContainerPort
+
+	DefaultServicePorts []corev1.ServicePort
 )
+
+func init() {
+	DefaultNodePorts = make([]corev1.ContainerPort, 0)
+	DefaultServicePorts = make([]corev1.ServicePort, 0)
+
+	for name, port := range Ports {
+		DefaultNodePorts = append(DefaultNodePorts, corev1.ContainerPort{
+			Name:          name,
+			ContainerPort: port,
+		})
+
+		DefaultServicePorts = append(DefaultServicePorts, corev1.ServicePort{
+			Name:       name,
+			Port:       port,
+			TargetPort: intstr.FromString(name),
+		})
+	}
+}
 
 type Reconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-func CreateObject(obj client.Object, r *Reconciler, key types.NamespacedName, logger logr.Logger) error {
+// CreateObject creates a new object if it does not exist
+// If the object is created, it will skip the reconcile loop
+func CreateObject(obj client.Object, r *Reconciler, key types.NamespacedName, logger logr.Logger) (bool, error) {
 	err := r.Client.Get(context.TODO(), key, obj)
 
 	if err != nil && errors.IsNotFound(err) {
@@ -46,13 +59,13 @@ func CreateObject(obj client.Object, r *Reconciler, key types.NamespacedName, lo
 		err = r.Client.Create(context.TODO(), obj)
 
 		if err != nil {
-			return err
+			return true, err
 		}
 
-		return nil
+		return true, nil
 	} else if err != nil {
-		return err
+		return true, err
 	}
 
-	return nil
+	return false, nil
 }

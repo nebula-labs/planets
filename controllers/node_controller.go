@@ -64,14 +64,29 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, err
 	}
 
+	// create a new PVC to host Pod data
+
 	// create a new Pod
-	pod := newPod(node)
+	pod := newPodForNode(node)
 	if err := controllerutil.SetControllerReference(node, pod, r.Scheme); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	foundPod := &corev1.Pod{}
-	return ctrl.Result{}, CreateObject(foundPod, (*Reconciler)(r), types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name}, logger)
+	if skip, err := CreateObject(&corev1.Pod{}, (*Reconciler)(r), types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name}, logger); skip {
+		return ctrl.Result{}, err
+	}
+
+	// create a new Service
+	service := newServiceForNode(node)
+	if err := controllerutil.SetControllerReference(node, service, r.Scheme); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if skip, err := CreateObject(&corev1.Service{}, (*Reconciler)(r), types.NamespacedName{Namespace: service.Namespace, Name: service.Name}, logger); skip {
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -82,14 +97,21 @@ func (r *NodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func newPod(cr *cosmosv1alpha1.Node) *corev1.Pod {
+func newPodForNode(cr *cosmosv1alpha1.Node) *corev1.Pod {
 	// define sensible defaults
+	// this label is for mapping with service
 	cr.Labels["node"] = cr.Name
 
-	cr.Spec.Env = append(cr.Spec.Env, corev1.EnvVar{
-		Name:  "CHAINID",
+	cr.Spec.Container.Env = append(cr.Spec.Container.Env, corev1.EnvVar{
+		Name:  "CHAIN_ID",
 		Value: cr.Spec.ChainId,
 	})
+
+	// InitContainers to handle copy of entrypoint
+	initContainers := []corev1.Container{{
+		Name:  "init",
+		Image: "busybox",
+	}}
 
 	// create a new Pod
 	pod := &corev1.Pod{
@@ -99,27 +121,39 @@ func newPod(cr *cosmosv1alpha1.Node) *corev1.Pod {
 			Labels:    cr.Labels,
 		},
 		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:            cr.Name,
-					Image:           cr.Spec.Container.Image,
-					ImagePullPolicy: corev1.PullPolicy(cr.Spec.Container.ImagePullPolicy),
-					Ports:           DefaultPorts,
-					Env:             cr.Spec.Env,
-				},
-			},
+			InitContainers: initContainers,
+			Containers:     []corev1.Container{cr.Spec.Container},
 		},
 	}
 
-	if (cr.Spec.DataVolume != corev1.Volume{}) {
-		pod.Spec.Volumes = []corev1.Volume{cr.Spec.DataVolume}
-		pod.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{
-			{
-				Name:      cr.Spec.DataVolume.Name,
-				MountPath: cr.Spec.Container.VolumeMountPath,
-			},
-		}
+	if cr.Spec.Container.Ports != nil {
+		pod.Spec.Containers[0].Ports = DefaultNodePorts
+	}
+
+	if cr.Spec.Volumes != nil {
+		pod.Spec.Volumes = cr.Spec.Volumes
+		pod.Spec.Containers[0].VolumeMounts = cr.Spec.Container.VolumeMounts
 	}
 
 	return pod
+}
+
+func newServiceForNode(cr *cosmosv1alpha1.Node) *corev1.Service {
+	// define sensible defaults
+	cr.Labels["node"] = cr.Name
+
+	// create a new Service
+	service := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cr.Name,
+			Namespace: cr.Namespace,
+			Labels:    cr.Labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: cr.Labels,
+			Ports:    DefaultServicePorts,
+		},
+	}
+
+	return service
 }

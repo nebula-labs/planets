@@ -23,10 +23,9 @@ import (
 
 // NodeSpec defines the desired state of Node
 type NodeSpec struct {
-	Container  ContainerSpec   `json:"container"`
-	ChainId    string          `json:"chainId"`
-	DataVolume corev1.Volume   `json:"dataVolume,omitempty"`
-	Env        []corev1.EnvVar `json:"env,omitempty"`
+	Container corev1.Container `json:"container"`
+	ChainId   string           `json:"chainId"`
+	Volumes   []corev1.Volume  `json:"volumes,omitempty"`
 }
 
 // NodeStatus defines the observed state of Node
