@@ -178,10 +178,9 @@ func (in *NodeList) DeepCopyObject() runtime.Object {
 func (in *NodeSpec) DeepCopyInto(out *NodeSpec) {
 	*out = *in
 	in.Container.DeepCopyInto(&out.Container)
-	in.DataVolume.DeepCopyInto(&out.DataVolume)
-	if in.Env != nil {
-		in, out := &in.Env, &out.Env
-		*out = make([]v1.EnvVar, len(*in))
+	if in.Volumes != nil {
+		in, out := &in.Volumes, &out.Volumes
+		*out = make([]v1.Volume, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
