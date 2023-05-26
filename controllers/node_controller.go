@@ -21,6 +21,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -65,14 +66,23 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	// create a new PVC to host Pod data
+	// create a new PVC to host Pod data
+	pvc := newPVCForNode(node)
+	if err := controllerutil.SetControllerReference(node, pvc, r.Scheme); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if skip, err := CreateObject(&corev1.PersistentVolumeClaim{}, pvc, (*Reconciler)(r), types.NamespacedName{Namespace: pvc.Namespace, Name: pvc.Name}, logger); skip {
+		return ctrl.Result{}, err
+	}
 
 	// create a new Pod
-	pod := newPodForNode(node)
+	pod := newPodForNode(node, pvc)
 	if err := controllerutil.SetControllerReference(node, pod, r.Scheme); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if skip, err := CreateObject(&corev1.Pod{}, (*Reconciler)(r), types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name}, logger); skip {
+	if skip, err := CreateObject(&corev1.Pod{}, pod, (*Reconciler)(r), types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name}, logger); skip {
 		return ctrl.Result{}, err
 	}
 
@@ -82,7 +92,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, err
 	}
 
-	if skip, err := CreateObject(&corev1.Service{}, (*Reconciler)(r), types.NamespacedName{Namespace: service.Namespace, Name: service.Name}, logger); skip {
+	if skip, err := CreateObject(&corev1.Service{}, service, (*Reconciler)(r), types.NamespacedName{Namespace: service.Namespace, Name: service.Name}, logger); skip {
 		return ctrl.Result{}, err
 	}
 
@@ -94,10 +104,34 @@ func (r *NodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cosmosv1alpha1.Node{}).
 		Owns(&corev1.Pod{}).
+		Owns(&corev1.Service{}).
+		Owns(&corev1.PersistentVolumeClaim{}).
 		Complete(r)
 }
 
-func newPodForNode(cr *cosmosv1alpha1.Node) *corev1.Pod {
+func newPVCForNode(cr *cosmosv1alpha1.Node) *corev1.PersistentVolumeClaim {
+	// create a new PVC
+	resourceRequest := corev1.ResourceList{}
+	resourceRequest[corev1.ResourceStorage] = resource.MustParse("50M")
+
+	pvc := &corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cr.Name,
+			Namespace: cr.Namespace,
+			Labels:    cr.Labels,
+		},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+			Resources: corev1.ResourceRequirements{
+				Requests: resourceRequest,
+			},
+		},
+	}
+
+	return pvc
+}
+
+func newPodForNode(cr *cosmosv1alpha1.Node, pvc *corev1.PersistentVolumeClaim) *corev1.Pod {
 	// define sensible defaults
 	// this label is for mapping with service
 	cr.Labels["node"] = cr.Name
@@ -107,12 +141,6 @@ func newPodForNode(cr *cosmosv1alpha1.Node) *corev1.Pod {
 		Value: cr.Spec.ChainId,
 	})
 
-	// InitContainers to handle copy of entrypoint
-	initContainers := []corev1.Container{{
-		Name:  "init",
-		Image: "busybox",
-	}}
-
 	// create a new Pod
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -121,8 +149,7 @@ func newPodForNode(cr *cosmosv1alpha1.Node) *corev1.Pod {
 			Labels:    cr.Labels,
 		},
 		Spec: corev1.PodSpec{
-			InitContainers: initContainers,
-			Containers:     []corev1.Container{cr.Spec.Container},
+			Containers: []corev1.Container{cr.Spec.Container},
 		},
 	}
 
@@ -131,8 +158,23 @@ func newPodForNode(cr *cosmosv1alpha1.Node) *corev1.Pod {
 	}
 
 	if cr.Spec.Volumes != nil {
-		pod.Spec.Volumes = cr.Spec.Volumes
-		pod.Spec.Containers[0].VolumeMounts = cr.Spec.Container.VolumeMounts
+		pod.Spec.Volumes = []corev1.Volume{
+			{
+				Name: "podVolume",
+				VolumeSource: corev1.VolumeSource{
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+						ClaimName: pvc.Name,
+					},
+				},
+			},
+		}
+		// need a better way to change MountPath
+		pod.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{
+			{
+				Name:      "podVolume",
+				MountPath: "/cosmos",
+			},
+		}
 	}
 
 	return pod

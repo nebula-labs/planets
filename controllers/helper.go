@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -50,11 +52,13 @@ type Reconciler struct {
 
 // CreateObject creates a new object if it does not exist
 // If the object is created, it will skip the reconcile loop
-func CreateObject(obj client.Object, r *Reconciler, key types.NamespacedName, logger logr.Logger) (bool, error) {
-	err := r.Client.Get(context.TODO(), key, obj)
+func CreateObject(structure client.Object, obj client.Object, r *Reconciler, key types.NamespacedName, logger logr.Logger) (bool, error) {
+	err := r.Client.Get(context.TODO(), key, structure)
+
+	kind := reflect.TypeOf(structure).Elem().Name()
 
 	if err != nil && errors.IsNotFound(err) {
-		logger.Info("Creating a new", obj.GetObjectKind().GroupVersionKind().Kind, "Object.Namespace", key.Namespace, "Object.Name", key.Name)
+		logger.Info(fmt.Sprintf("Creating %s with name = %s", kind, key.Name))
 
 		err = r.Client.Create(context.TODO(), obj)
 
@@ -66,6 +70,8 @@ func CreateObject(obj client.Object, r *Reconciler, key types.NamespacedName, lo
 	} else if err != nil {
 		return true, err
 	}
+
+	logger.Info(fmt.Sprint("Found ", kind, " with name = ", key.Name))
 
 	return false, nil
 }

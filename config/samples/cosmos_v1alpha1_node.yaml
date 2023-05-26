@@ -4,9 +4,13 @@ metadata:
   labels:
     app.kubernetes.io/name: node
     app.kubernetes.io/instance: node-sample
-    app.kubernetes.io/part-of: planets
+    app.kubernetes.io/part-of: operator
     app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: planets
+    app.kubernetes.io/created-by: operator
   name: node-sample
 spec:
-  # TODO(user): Add fields here
+  container:
+    name: node0
+    image: ghcr.io/be-heroes/doxchain:arch
+    imagePullPolicy: IfNotPresent
+  chainId: doxchain-1
